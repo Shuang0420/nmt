@@ -106,11 +106,12 @@ def get_infer_model(ckpt,
 
 
 
-def stream_inference(infer_model, 
+def stream_inference(hparams,
+                     infer_model, 
                      loaded_infer_model, 
                      sess,
                      input_,
-                     hparams):
+                     ):
   """Inference with a single worker."""
   # Read data
   # Didn't handle hparams.inference_indices

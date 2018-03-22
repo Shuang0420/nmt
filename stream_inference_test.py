@@ -22,7 +22,7 @@ def stream_infer_test(args_in):
     infer_model, loaded_infer_model, sess = run_main(FLAGS, default_hparams, train_fn, inference_fn)
     while True:
         text = raw_input("> ")
-        print(inference_stream(infer_model, loaded_infer_model, sess, [text], default_hparams))
+        print(inference_stream(default_hparams, infer_model, loaded_infer_model, sess, [text]))
 
 
 stream_infer_test(args_in)
