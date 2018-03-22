@@ -242,6 +242,9 @@ def add_arguments(parser):
                       """))
 
   # Inference
+  parser.add_argument("--stream_infer", type="bool", nargs="?", const=True,
+                      default=False,
+                      help="Stream infer if present.")
   parser.add_argument("--ckpt", type=str, default="",
                       help="Checkpoint file to load a model for inference.")
   parser.add_argument("--inference_input_file", type=str, default=None,
@@ -561,7 +564,15 @@ def run_main(flags, default_hparams, train_fn, inference_fn, target_session=""):
   hparams = create_or_load_hparams(
       out_dir, default_hparams, flags.hparams_path, save_hparams=(jobid == 0))
 
-  if flags.inference_input_file:
+  # ckpt
+  ckpt = flags.ckpt
+  if not ckpt:
+    ckpt = tf.train.latest_checkpoint(out_dir)
+  
+  if flags.stream_infer:
+    infer_model, loaded_infer_model, sess = inference.get_infer_model(ckpt, hparams)
+    return infer_model, loaded_infer_model, sess
+  elif flags.inference_input_file:
     # Inference indices
     hparams.inference_indices = None
     if flags.inference_list:
@@ -570,9 +581,6 @@ def run_main(flags, default_hparams, train_fn, inference_fn, target_session=""):
 
     # Inference
     trans_file = flags.inference_output_file
-    ckpt = flags.ckpt
-    if not ckpt:
-      ckpt = tf.train.latest_checkpoint(out_dir)
     inference_fn(ckpt, flags.inference_input_file,
                  trans_file, hparams, num_workers, jobid)
 

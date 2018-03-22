@@ -80,6 +80,63 @@ def load_data(inference_input_file, hparams=None):
   return inference_data
 
 
+def get_infer_model(ckpt,
+                   hparams,
+                   scope=None):
+  if not hparams.attention:
+    model_creator = nmt_model.Model
+  elif hparams.attention_architecture == "standard":
+    model_creator = attention_model.AttentionModel
+  elif hparams.attention_architecture in ["gnmt", "gnmt_v2"]:
+    model_creator = gnmt_model.GNMTModel
+  else:
+    raise ValueError("Unknown model architecture")
+
+  infer_model = model_helper.create_infer_model(model_creator, hparams, scope)
+  
+  with infer_model.graph.as_default():
+    config = utils.get_config_proto()
+    sess = tf.Session(config=config)
+
+    with sess.as_default():
+      loaded_infer_model = model_helper.load_model(
+        infer_model.model, ckpt, sess, "infer")
+
+  return infer_model, loaded_infer_model, sess
+
+
+
+def stream_inference(infer_model, 
+                     loaded_infer_model, 
+                     sess,
+                     input_,
+                     hparams):
+  """Inference with a single worker."""
+  # Read data
+  # Didn't handle hparams.inference_indices
+  infer_data = input_
+  sess.run(
+      infer_model.iterator.initializer,
+      feed_dict={
+          infer_model.src_placeholder: infer_data,
+          infer_model.batch_size_placeholder: hparams.infer_batch_size
+      })
+
+  # Decode
+  utils.print_out("# Start decoding")
+  # TODO: Add if hparams.inference_indices
+  ltrans = nmt_utils.decode_only(
+      "infer",
+      loaded_infer_model,
+      sess,
+      ref_file=None,
+      subword_option=hparams.subword_option,
+      beam_width=hparams.beam_width,
+      tgt_eos=hparams.eos,
+      num_translations_per_input=hparams.num_translations_per_input)
+  return ltrans
+
+
 def inference(ckpt,
               inference_input_file,
               inference_output_file,

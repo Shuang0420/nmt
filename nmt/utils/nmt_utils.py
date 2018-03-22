@@ -27,6 +27,55 @@ from ..utils import misc_utils as utils
 __all__ = ["decode_and_evaluate", "get_translation"]
 
 
+
+def decode_only(name,
+          model,
+          sess,
+          ref_file,
+          subword_option,
+          beam_width,
+          tgt_eos,
+          num_translations_per_input=1,
+          decode=True):
+  """Decode a test set and compute a score according to the evaluation task."""
+  # Decode
+  if decode:
+    start_time = time.time()
+    ltrans = []
+    num_sentences = 0
+    # with codecs.getwriter("utf-8")(
+    #     tf.gfile.GFile(trans_file, mode="wb")) as trans_f:
+    #   trans_f.write("")  # Write empty string to ensure file is created.
+
+    num_translations_per_input = max(
+        min(num_translations_per_input, beam_width), 1)
+    while True:
+      try:
+        nmt_outputs, _ = model.decode(sess)
+        if beam_width == 0:
+          nmt_outputs = np.expand_dims(nmt_outputs, 0)
+
+        batch_size = nmt_outputs.shape[1]
+        num_sentences += batch_size
+
+        for sent_id in range(batch_size):
+          for beam_id in range(num_translations_per_input):
+            translation = get_translation(
+                nmt_outputs[beam_id],
+                sent_id,
+                tgt_eos=tgt_eos,
+                subword_option=subword_option)
+            ltrans.append(translation.decode("utf-8"))
+            # trans_f.write((translation + b"\n").decode("utf-8"))
+      except tf.errors.OutOfRangeError:
+        utils.print_time(
+            "  done, num sentences %d, num translations per input %d" %
+            (num_sentences, num_translations_per_input), start_time)
+        break
+  return ltrans
+
+
+
 def decode_and_evaluate(name,
                         model,
                         sess,

@@ -157,6 +157,7 @@ def format_text(words):
   if (not hasattr(words, "__len__") and  # for numpy array
       not isinstance(words, collections.Iterable)):
     words = [words]
+  print(words)
   return b" ".join(words)
 
 
