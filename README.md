@@ -1,7 +1,8 @@
 
-1. Fix restore bugs for model ``ende_gnmt_model_8_layer`` and ``deen_gnmt_model_4_layer``
+1. Fix restoring bugs for model ``ende_gnmt_model_8_layer`` and ``deen_gnmt_model_4_layer``
 2. Support stream predict so that you can load model once and keep translation. (see ``stream_inference_test.py`` for example).
 
+Original README
 ***
 
 # Neural Machine Translation (seq2seq) Tutorial
